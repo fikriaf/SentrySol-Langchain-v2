@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SentrySol-Core | Advanced Solana Threat Analysis</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #8b5cf6;
+            --dark: #0f172a;
+            --darker: #020617;
+            --light: #f1f5f9;
+            --gray: #94a3b8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, var(--darker), #1e293b);
+            color: var(--light);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0;
+            margin-bottom: 30px;
+            position: relative; }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .logo-icon {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);
+        }
+
+        .logo-icon i {
+            font-size: 28px;
+            color: white;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #e0f2fe, #c7d2fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--gray);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .input-section {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 16px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: rgba(15, 23, 42, 0.7);
+            color: white;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
+        }
+
+        .input-group input::placeholder {
+            color: var(--gray);
+        }
+
+        #analyzeBtn {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 0 30px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+        }
+
+        #analyzeBtn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.6);
+        }
+
+        #analyzeBtn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .examples {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .example-btn {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid var(--border);
+            color: var(--gray);
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .example-btn:hover {
+            background: rgba(56, 78, 119, 0.8); color: white;
+        }
+
+        .status-section {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .status-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .status-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-title i {
+            color: var(--primary);
+        }
+
+        #status {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--gray);
+        }
+
+        .progress-container {
+            margin-bottom: 25px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 6px;
+            transition: width 0.5s ease; width: 0%;
+        }
+
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+
+        .logs-container {
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        .log {
+            background: rgba(30, 41, 59, 0.6);
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 14px;
+            border-left: 3px solid var(--primary);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .results-section {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 30px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .section-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-title i {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .risk-level {
+            font-size: 1.8rem;
+            font-weight: 800;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .risk-high {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.3));
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fecaca;
+        }
+
+        .risk-medium {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.3));
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #fde68a;
+        } .risk-low {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.3));
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #a7f3d0;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px; margin-bottom: 30px;
+        }
+
+        .analysis-card {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border);
+            transition: transform 0.3s ease;
+        }
+
+        .analysis-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .card-header i {
+            font-size: 1.2rem;
+            color: var(--primary);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .card-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 5px;
+        }
+
+        .card-description {
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+
+        .threat-section {
+            margin-bottom: 30px;
+        }
+
+        .threat-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .threat-card {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 4px solid;
+        }
+
+        .threat-high {
+            border-left-color: var(--danger);
+        }
+
+        .threat-medium {
+            border-left-color: var(--warning);
+        }
+
+        .threat-low {
+            border-left-color: #3b82f6;
+        }
+
+        .threat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .threat-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .confidence-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .confidence-high {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fecaca; }
+
+        .confidence-medium {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fde68a;
+        }
+
+        .confidence-low {
+            background: rgba(59, 130, 246, 0.2);
+            color: #bfdbfe;
+        }
+
+        .threat-reason {
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .evidence-list, .actions-list {
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .evidence-list h5, .actions-list h5 {
+            margin-bottom: 10px;
+            color: var(--gray);
+            font-size: 0.95rem;
+        }
+
+        .evidence-item, .action-item {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .evidence-item:last-child, .action-item:last-child {
+            border-bottom: none;
+        }
+
+        .ioc-section {
+            background: rgba(251, 191, 36, 0.1);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+            border: 1px solid rgba(251, 191, 36, 0.2); }
+
+        .ioc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .ioc-category {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .ioc-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ioc-item {
+            background: rgba(30, 41, 59, 0.5);
+            padding: 10px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            word-break: break-all;
+        }
+
+        .json-viewer {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 12px;
+            padding: 20px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 20px 0;
+            border: 1px solid var(--border);
+        }
+
+        .nft-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px; margin-top: 20px;
+        }
+
+        .nft-card {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid var(--border);
+            transition: transform 0.3s ease;
+        }
+
+        .nft-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+
+        .nft-image {
+            width: 100%;
+            height: 140px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+        }
+
+        .nft-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .nft-symbol {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            color: var(--gray);
+            font-size: 0.9rem;
+            margin-top: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .input-group {
+                flex-direction: column;
+            }
+            
+            .input-group input, #analyzeBtn {
+                width: 100%;
+                padding: 14px;
+            }
+            
+            .analysis-grid, .threat-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h1>SentrySol-Core</h1>
+            </div>
+            <p class="subtitle">Advanced Solana blockchain threat detection and analysis platform</p> </header>
+
+        <section class="input-section">
+            <div class="input-group">
+                <input type="text" id="addressInput" placeholder="Enter Solana wallet address (e.g., 2YcwVbKx9L25Jpaj2vfWSXD5UKugZumWjzEe6suBUJi2)">
+                <button id="analyzeBtn" onclick="startAnalysis()">
+                    <i class="fas fa-search"></i> Analyze
+                </button>
+            </div>
+            <div class="examples">
+                <button class="example-btn" onclick="fillExample('2YcwVbKx9L25Jpaj2vfWSXD5UKugZumWjzEe6suBUJi2')">Example 1</button>
+                <button class="example-btn" onclick="fillExample('H6ARHf6YXhGYeQfUzQNGk6rDNnLBQKrenN712K4AQJEG')">Example 2</button>
+                <button class="example-btn" onclick="fillExample('4M8v6mYGL5osDq1HKQfv86uXqQ5J57YNNQ9wFSYMB1P9')">Example 3</button>
+            </div>
+        </section>
+
+        <section class="status-section">
+            <div class="status-header">
+                <div class="status-title">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Analysis Status</span>
+                </div>
+                <div id="status">Ready to analyze</div>
+            </div> <div class="progress-container">
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+                <div class="progress-text">
+                    <span>Progress</span>
+                    <span id="progressText">0%</span>
+                </div>
+            </div>
+            
+            <div class="logs-container">
+                <div id="logs"></div>
+            </div>
+        </section>
+
+        <section class="results-section">
+            <div class="section-title">
+                <i class="fas fa-chart-bar"></i> <span>Analysis Results</span>
+            </div>
+            <div id="result"></div>
+        </section>
+
+        <footer>
+            <p>SentrySol-Core v1.0 | Advanced Blockchain Threat Intelligence Platform</p> </footer>
+    </div>
+
+    <script>
+        function fillExample(address) {
+            document.getElementById('addressInput').value = address;
+        }
+
+        function formatThreatAnalysis(threatData) {
+            if (!threatData || !threatData.threat_analysis) return '';
+            
+            const analysis = threatData.threat_analysis;
+            let html = '';
+            
+            // Risk Level Header
+            const riskClass = `risk-${analysis.overall_risk_level.toLowerCase()}`;
+            html += `<div class="risk-level ${riskClass}">`;
+            html += `<i class="fas fa-exclamation-triangle"></i> Overall Risk Level: ${analysis.overall_risk_level} <span style="font-size:1.2rem;">(Score: ${analysis.risk_score}/100)</span>`;
+            html += '</div>';
+            
+            // Metadata
+            if (analysis.metadata) {
+                html += '<div class="analysis-grid">';
+                html += `<div class="analysis-card"><div class="card-header"><i class="fas fa-wallet"></i><div class="card-title">Target Address</div></div><div class="card-value" style="font-size: 0.9rem;">${analysis.metadata.target_address.substring(0, 8)}...${analysis.metadata.target_address.substring(analysis.metadata.target_address.length - 8)}</div></div>`;
+                html += `<div class="analysis-card"><div class="card-header"><i class="fas fa-link"></i><div class="card-title">Chain</div></div><div class="card-value">${analysis.metadata.chain}</div></div>`;
+                html += `<div class="analysis-card"><div class="card-header"><i class="fas fa-database"></i><div class="card-title">Data Sources</div></div><div class="card-value">${analysis.metadata.data_sources.length}</div></div>`;
+                html += '</div>';
+            }
+            
+            // Potential Threats
+            if (analysis.potential_threats && analysis.potential_threats.length > 0) {
+                html += '<div class="threat-section">';
+                html += '<div class="section-title"><i class="fas fa-skull"></i><span>Identified Threats</span></div>';
+                html += '<div class="threat-cards">';
+                
+                analysis.potential_threats.forEach((threat, index) => {
+                    const threatClass = `threat-${threat.confidence.toLowerCase()}`;
+                    const confidenceClass = `confidence-${threat.confidence.toLowerCase()}`;
+                    
+                    html += `<div class="threat-card ${threatClass}">`;
+                    html += '<div class="threat-header">';
+                    html += `<div class="threat-title">${threat.threat_type}</div>`;
+                    html += `<span class="confidence-badge ${confidenceClass}">${threat.confidence}</span>`;
+                    html += '</div>';
+                    
+                    html += `<div class="threat-reason">${threat.reason}</div>`;
+                    
+                    // Supporting Evidence
+                    if (threat.supporting_evidence) {
+                        html += '<div class="evidence-list">';
+                        html += '<h5><i class="fas fa-list"></i> Supporting Evidence</h5>';
+                        Object.entries(threat.supporting_evidence).forEach(([key, value]) => {
+                            html += `<div class="evidence-item"><strong>${key.replace(/_/g, ' ').toUpperCase()}:</strong> ${value}</div>`; });
+                        html += '</div>';
+                    }
+                    
+                    // Recommended Actions
+                    if (threat.recommended_actions && threat.recommended_actions.length > 0) {
+                        html += '<div class="actions-list">';
+                        html += '<h5><i class="fas fa-check-circle"></i> Recommended Actions</h5>';
+                        threat.recommended_actions.forEach(action => {
+                            html += `<div class="action-item">${action}</div>`;
+                        });
+                        html += '</div>';
+                    }
+                    html += '</div>';
+                });
+                
+                html += '</div></div>';
+            }
+            
+            // IOC (Indicators of Compromise)
+            if (analysis.ioc) {
+                html += '<div class="ioc-section">';
+                html += '<div class="section-title" style="color: #fbbf24;"><i class="fas fa-bullseye"></i><span>Indicators of Compromise</span></div>';
+                
+                html += '<div class="ioc-grid">';
+                
+                if (analysis.ioc.addresses && analysis.ioc.addresses.length > 0) {
+                    html += '<div class="ioc-category">';
+                    html += '<div class="ioc-title"><i class="fas fa-home"></i> Addresses</div>';
+                    analysis.ioc.addresses.forEach(addr => {
+                        html += `<div class="ioc-item">${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}</div>`;
+                    });
+                    html += '</div>';
+                }
+                
+                if (analysis.ioc.transaction_signatures && analysis.ioc.transaction_signatures.length > 0) {
+                    html += '<div class="ioc-category">';
+                    html += '<div class="ioc-title"><i class="fas fa-file-signature"></i> Transaction Signatures</div>';
+                    analysis.ioc.transaction_signatures.forEach(sig => {
+                        html += `<div class="ioc-item">${sig.substring(0, 8)}...${sig.substring(sig.length - 8)}</div>`;
+                    });
+                    html += '</div>';
+                }
+                
+                if (analysis.ioc.suspicious_mints && analysis.ioc.suspicious_mints.length > 0) {
+                    html += '<div class="ioc-category">';
+                    html += '<div class="ioc-title"><i class="fas fa-coins"></i> Suspicious Mints</div>';
+                    analysis.ioc.suspicious_mints.forEach(mint => {
+                        html += `<div class="ioc-item">${mint.substring(0, 8)}...${mint.substring(mint.length - 8)}</div>`;
+                    });
+                    html += '</div>';
+                }
+                
+                if (analysis.ioc.related_programs && analysis.ioc.related_programs.length > 0) {
+                    html += '<div class="ioc-category">';
+                    html += '<div class="ioc-title"><i class="fas fa-cogs"></i> Related Programs</div>';
+                    analysis.ioc.related_programs.forEach(program => {
+                        html += `<div class="ioc-item">${program.substring(0, 8)}...${program.substring(program.length - 8)}</div>`;
+                    });
+                    html += '</div>';
+                }
+                
+                html += '</div></div>';
+            }
+            
+            return html;
+        }
+
+        function parseAnalysisResult(rawResult) {
+            try {
+                if (typeof rawResult === 'string') {
+                    let cleanResult = rawResult;
+                    if (rawResult.startsWith('```json\n')) {
+                        cleanResult = rawResult.replace(/^```json\n/, '').replace(/\n```$/, '');
+                    } else if (rawResult.startsWith('```\n')) {
+                        cleanResult = rawResult.replace(/^```\n/, '').replace(/\n```$/, '');
+                    }
+                    return JSON.parse(cleanResult);
+                } else {
+                    return rawResult;
+                }
+            } catch (e) {
+                console.error('Failed to parse analysis result:', e);
+                return null;
+            }
+        }
+
+        function formatAnalysisResult(data) {
+            if (!data.analysis_result && !data.detailed_data) return '';
+            
+            let html = '';
+            
+            // Parse and render threat analysis
+            let threatAnalysis = null;
+            if (data.analysis_result) {
+                threatAnalysis = parseAnalysisResult(data.analysis_result);
+                
+                if (threatAnalysis && threatAnalysis.threat_analysis) {
+                    html += formatThreatAnalysis(threatAnalysis);
+                } else if (data.analysis_result) {
+                    html += '<div class="analysis-section">';
+                    html += '<div class="section-title"><i class="fas fa-robot"></i><span>AI Analysis Result</span></div>';
+                    html += '<div class="json-viewer">';
+                    if (typeof data.analysis_result === 'string') {
+                        html += data.analysis_result.replace(/\n/g, '<br>');
+                    } else {
+                        html += JSON.stringify(data.analysis_result, null, 2);
+                    }
+                    html += '</div></div>';
+                }
+            }
+            
+            // Detailed Data
+            if (data.detailed_data) {
+                const details = data.detailed_data;
+                
+                // Wallet Info
+                if (details.wallet_info) {
+                    html += '<div class="section-title"><i class="fas fa-wallet"></i><span>Wallet Information</span></div>';
+                    html += '<div class="analysis-grid">';
+                    html += `<div class="analysis-card"><div class="card-header"><i class="fas fa-fingerprint"></i><div class="card-title">Address</div></div><div class="card-value" style="font-size: 0.8rem;">${details.wallet_info.address ? details.wallet_info.address.substring(0, 8) + '...' + details.wallet_info.address.substring(details.wallet_info.address.length - 8) : 'N/A'}</div></div>`;
+                    html += `<div class="analysis-card"><div class="card-header"><i class="fas fa-tag"></i><div class="card-title">Address Name</div></div><div class="card-value">${details.wallet_info.address_name || 'Unknown'}</div></div>`;
+                    html += `<div class="analysis-card"><div class="card-header"><i class="fas fa-shield-alt"></i><div class="card-title">Risk Score</div></div><div class="card-value">${details.wallet_info.risk_score || 'N/A'}</div></div>`;
+                    html += '</div>';
+                }
+                
+                // Transaction Summary
+                if (details.transaction_summary) {
+                    html += '<div class="section-title"><i class="fas fa-exchange-alt"></i><span>Transaction Summary</span></div>';
+                    html += '<div class="analysis-grid">';
+                    html += `<div class="analysis-card"><div class="card-header"><i class="fas fa-list"></i><div class="card-title">Total Transactions</div></div><div class="card-value">${details.transaction_summary.total_transactions || 0}</div></div>`;
+                    html += `<div class="analysis-card"><div class="card-header"><i class="fas fa-signature"></i><div class="card-title">Recent Signatures</div></div><div class="card-value">${details.transaction_summary.recent_signatures || 0}</div></div>`;
+                    html += `<div class="analysis-card"><div class="card-header"><i class="fas fa-balance-scale"></i><div class="card-title">Balance Changes</div></div><div class="card-value">${Array.isArray(details.transaction_summary.balance_changes) ? details.transaction_summary.balance_changes.length : 0}</div></div>`;
+                    html += '</div>';
+                }
+                
+                // Token Analysis
+                if (details.token_analysis) {
+                    html += '<div class="section-title"><i class="fas fa-coins"></i><span>Token & NFT Analysis</span></div>';
+                    html += '<div class="analysis-grid">';
+                    html += `<div class="analysis-card"><div class="card-header"><i class="fas fa-coins"></i><div class="card-title">Tokens Found</div></div><div class="card-value">${details.token_analysis.tokens_found || 0}</div></div>`;
+                    html += `<div class="analysis-card"><div class="card-header"><i class="fas fa-image"></i><div class="card-title">NFTs Found</div></div><div class="card-value">${details.token_analysis.nfts_found || 0}</div></div>`;
+                    html += '</div>';
+                    
+                    // NFT Display
+                    if (details.token_analysis.nft_metadata && details.token_analysis.nft_metadata.length > 0) {
+                        html += '<div class="section-title"><i class="fas fa-images"></i><span>Recent NFTs</span></div>';
+                        html += '<div class="nft-grid">';
+                        details.token_analysis.nft_metadata.slice(0, 8).forEach(nft => {
+                            html += '<div class="nft-card">';
+                            html += '<div class="nft-image"></div>';
+                            html += `<div class="nft-name">${nft.name || 'Unknown NFT'}</div>`;
+                            html += `<div class="nft-symbol">${nft.symbol || ''}</div>`;
+                            html += '</div>';
+                        }); html += '</div>';
+                    }
+                    
+                    // Token Metadata
+                    if (details.token_analysis.token_metadata && details.token_analysis.token_metadata.length > 0) {
+                        html += '<div class="section-title"><i class="fas fa-file-alt"></i><span>Token Metadata</span></div>';
+                        html += '<div class="json-viewer">' + JSON.stringify(details.token_analysis.token_metadata, null, 2) + '</div>';
+                    }
+                }
+            }
+            
+            return html;
+        }
+
+        function startAnalysis() {
+            const address = document.getElementById('addressInput').value;
+            if (!address) {
+                alert('Please enter a Solana address');
+                return;
+            }
+
+            // Reset UI
+            document.getElementById('logs').innerHTML = '';
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('progressFill').style.width = '0%';
+            document.getElementById('progressText').innerText = '0%';
+            document.getElementById('status').innerText = 'Starting analysis...';
+            document.getElementById('analyzeBtn').disabled = true;
+
+            // Start EventSource for real-time streaming
+            const eventSource = new EventSource(`http://localhost:8000/analyze/${address}`);
+            
+            eventSource.onmessage = function(event) {
+                if (event.data === '[DONE]') {
+                    eventSource.close();
+                    document.getElementById('analyzeBtn').disabled = false;
+                    document.getElementById('status').innerText = 'Analysis completed successfully!';
+                    return;
+                }
+                
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    // Update progress
+                    document.getElementById('progressFill').style.width = data.progress + '%';
+                    document.getElementById('progressText').innerText = data.progress + '%';
+                    document.getElementById('status').innerText = data.status;
+                    
+                    // Add log with additional data info
+                    const logDiv = document.createElement('div');
+                    logDiv.className = 'log';
+                    let logContent = `Step ${data.step}: ${data.status} (${data.progress}%)`;
+                    
+                    if (data.data) {
+                        const dataInfo = Object.entries(data.data).map(([key, value]) => `${key}: ${value}`).join(', ');
+                        logContent += ` - ${dataInfo}`;
+                    }
+                    
+                    logDiv.innerHTML = logContent;
+                    document.getElementById('logs').appendChild(logDiv);
+                    
+                    // Show final result with proper formatting
+                    if (data.analysis_result || data.detailed_data) {
+                        document.getElementById('result').innerHTML = formatAnalysisResult(data);
+                    }
+                    
+                    // Auto scroll to bottom
+                    logDiv.scrollIntoView({ behavior: 'smooth' });
+                    
+                } catch (e) {
+                    console.error('Error parsing data:', e);
+                    const logDiv = document.createElement('div');
+                    logDiv.className = 'log';
+                    logDiv.innerHTML = `Error: Failed to parse response data`;
+                    document.getElementById('logs').appendChild(logDiv);
+                }
+            };
+            
+            eventSource.onerror = function(event) {
+                console.error('EventSource error:', event);
+                eventSource.close();
+                document.getElementById('analyzeBtn').disabled = false;
+                document.getElementById('status').innerText = 'Error occurred during analysis - Check if server is running on localhost:8000';
+                
+                const logDiv = document.createElement('div');
+                logDiv.className = 'log';
+                logDiv.innerHTML = `Connection Error: Unable to connect to analysis server. Make sure the server is running on http://localhost:8000`;
+                document.getElementById('logs').appendChild(logDiv);
+            };
+        }
+    </script>
+</body>
+</html>

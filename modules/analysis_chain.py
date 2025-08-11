@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from langchain_mistralai.chat_models import ChatMistralAI
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
@@ -35,8 +36,8 @@ FORMAT:
     "metadata": {{
       "target_address": "...",
       "chain": "Solana",
-      "analysis_timestamp": "<UTC datetime>",
-      "data_sources": ["Helius API", "Metasleuth API", "LLM Model: Fine-tuned XYZ"]
+      "analysis_timestamp": "{timestamp}",
+      "data_sources": ["SentrySol Security AI", "SentrySol Blockchain Analyzer", "SentrySol ML Model"]
     }},
     "potential_threats": [...],
     "overall_risk_level": "...",
@@ -61,6 +62,7 @@ def run_analysis(context: str):
             model=LLM_MODEL, mistral_api_key=MISTRAL_API_KEY, temperature=0
         )
         chain = LLMChain(llm=llm, prompt=prompt_template)
-        return chain.run(context=context)
+        local_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        return chain.run(context=context, timestamp=local_timestamp)
     except Exception as e:
         return f"Error with Mistral AI: {str(e)}"
