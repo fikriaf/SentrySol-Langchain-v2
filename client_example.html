@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Solana Analysis Stream</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f8f9fa; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .progress-bar { width: 100%; height: 20px; background-color: #f0f0f0; border-radius: 10px; margin: 20px 0; }
+        .progress-fill { height: 100%; background-color: #4CAF50; border-radius: 10px; transition: width 0.3s ease; }
+        .log { background-color: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 5px; font-family: monospace; border-left: 4px solid #007bff; }
+        .result-container { background-color: white; padding: 20px; border-radius: 8px; margin-top: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .analysis-section { margin-bottom: 25px; padding: 15px; border: 1px solid #dee2e6; border-radius: 5px; }
+        .analysis-section h3 { color: #495057; margin-top: 0; border-bottom: 2px solid #e9ecef; padding-bottom: 5px; }
+        .data-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
+        .data-card { background-color: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 4px solid #28a745; }
+        .data-card h4 { margin: 0 0 8px 0; color: #495057; font-size: 14px; }
+        .data-value { font-family: monospace; font-weight: bold; color: #007bff; }
+        .json-viewer { background-color: #f8f9fa; padding: 15px; border-radius: 5px; border: 1px solid #dee2e6; font-family: monospace; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+        .nft-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+        .nft-card { background-color: white; border: 1px solid #dee2e6; border-radius: 5px; padding: 10px; text-align: center; }
+        .nft-image { width: 100%; height: 120px; object-fit: cover; border-radius: 3px; }
+        #analyzeBtn { background-color: #4CAF50; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        #analyzeBtn:disabled { background-color: #6c757d; cursor: not-allowed; }
+        .input-group { margin-bottom: 20px; }
+        .input-group input { width: 500px; padding: 12px; border: 1px solid #ced4da; border-radius: 5px; font-size: 16px; }
+        .status-display { font-size: 18px; font-weight: bold; color: #495057; margin-bottom: 10px; }
+        
+        /* Threat Analysis Specific Styles */
+        .threat-card { background-color: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+        .threat-high { border-left: 5px solid #dc3545; }
+        .threat-medium { border-left: 5px solid #fd7e14; }
+        .threat-low { border-left: 5px solid #ffc107; }
+        .confidence-badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .confidence-high { background-color: #dc3545; color: white; }
+        .confidence-medium { background-color: #fd7e14; color: white; }
+        .confidence-low { background-color: #ffc107; color: black; }
+        .risk-level { font-size: 24px; font-weight: bold; padding: 10px 15px; border-radius: 5px; text-align: center; margin-bottom: 20px; }
+        .risk-high { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .risk-medium { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .risk-low { background-color: #d1edff; color: #0c5460; border: 1px solid #bee5eb; }
+        .evidence-list { background-color: #f8f9fa; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .actions-list { background-color: #e8f5e8; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .ioc-section { background-color: #fff3e0; padding: 15px; border-radius: 5px; border-left: 4px solid #ff9800; }
+        .ioc-item { background-color: white; padding: 8px; margin: 5px 0; border-radius: 3px; font-family: monospace; word-break: break-all; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Solana Address Analysis</h1>
+        
+        <div class="input-group">
+            <input type="text" id="addressInput" placeholder="Enter Solana address (e.g., 2YcwVbKx9L25Jpaj2vfWSXD5UKugZumWjzEe6suBUJi2)">
+            <button id="analyzeBtn" onclick="startAnalysis()">Analyze</button>
+        </div>
+        
+        <div class="progress-bar">
+            <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+        </div>
+        
+        <div id="status" class="status-display">Ready to analyze</div>
+        <div id="logs"></div>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function formatThreatAnalysis(threatData) {
+            if (!threatData || !threatData.threat_analysis) return '';
+            
+            const analysis = threatData.threat_analysis;
+            let html = '<div class="analysis-section">';
+            html += '<h3>🛡️ Threat Analysis Report</h3>';
+            
+            // Risk Level Header
+            const riskClass = `risk-${analysis.overall_risk_level.toLowerCase()}`;
+            html += `<div class="risk-level ${riskClass}">`;
+            html += `🚨 Overall Risk Level: ${analysis.overall_risk_level} (Score: ${analysis.risk_score}/100)`;
+            html += '</div>';
+            
+            // Metadata
+            if (analysis.metadata) {
+                html += '<div style="background-color: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px;">';
+                html += '<strong>Analysis Details:</strong><br>';
+                html += `Target: <code>${analysis.metadata.target_address}</code><br>`;
+                html += `Chain: ${analysis.metadata.chain}<br>`;
+                html += `Timestamp: ${analysis.metadata.analysis_timestamp}<br>`;
+                html += `Data Sources: ${analysis.metadata.data_sources.join(', ')}`;
+                html += '</div>';
+            }
+            
+            // Potential Threats
+            if (analysis.potential_threats && analysis.potential_threats.length > 0) {
+                html += '<h4>⚠️ Identified Threats</h4>';
+                analysis.potential_threats.forEach((threat, index) => {
+                    const threatClass = `threat-${threat.confidence.toLowerCase()}`;
+                    const confidenceClass = `confidence-${threat.confidence.toLowerCase()}`;
+                    
+                    html += `<div class="threat-card ${threatClass}">`;
+                    html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">`;
+                    html += `<h5 style="margin: 0; color: #495057;">🔍 ${threat.threat_type}</h5>`;
+                    html += `<span class="confidence-badge ${confidenceClass}">${threat.confidence} Confidence</span>`;
+                    html += '</div>';
+                    
+                    html += `<p><strong>Analysis:</strong> ${threat.reason}</p>`;
+                    
+                    // Supporting Evidence
+                    if (threat.supporting_evidence) {
+                        html += '<div class="evidence-list">';
+                        html += '<strong>📋 Supporting Evidence:</strong><br>';
+                        Object.entries(threat.supporting_evidence).forEach(([key, value]) => {
+                            html += `• <strong>${key.replace(/_/g, ' ').toUpperCase()}:</strong> ${value}<br>`;
+                        });
+                        html += '</div>';
+                    }
+                    
+                    // Recommended Actions
+                    if (threat.recommended_actions && threat.recommended_actions.length > 0) {
+                        html += '<div class="actions-list">';
+                        html += '<strong>✅ Recommended Actions:</strong><br>';
+                        threat.recommended_actions.forEach(action => {
+                            html += `• ${action}<br>`;
+                        });
+                        html += '</div>';
+                    }
+                    
+                    html += '</div>';
+                });
+            }
+            
+            // Risk Factors
+            if (analysis.risk_factors && analysis.risk_factors.length > 0) {
+                html += '<div style="background-color: #fff3e0; padding: 15px; border-radius: 5px; margin: 15px 0;">';
+                html += '<h4>⚡ Key Risk Factors</h4>';
+                analysis.risk_factors.forEach(factor => {
+                    html += `• ${factor}<br>`;
+                });
+                html += '</div>';
+            }
+            
+            // IOC (Indicators of Compromise)
+            if (analysis.ioc) {
+                html += '<div class="ioc-section">';
+                html += '<h4>🎯 Indicators of Compromise (IOC)</h4>';
+                
+                if (analysis.ioc.addresses && analysis.ioc.addresses.length > 0) {
+                    html += '<strong>🏠 Addresses:</strong><br>';
+                    analysis.ioc.addresses.forEach(addr => {
+                        html += `<div class="ioc-item">${addr}</div>`;
+                    });
+                }
+                
+                if (analysis.ioc.transaction_signatures && analysis.ioc.transaction_signatures.length > 0) {
+                    html += '<strong>📝 Transaction Signatures:</strong><br>';
+                    analysis.ioc.transaction_signatures.forEach(sig => {
+                        html += `<div class="ioc-item">${sig}</div>`;
+                    });
+                }
+                
+                if (analysis.ioc.suspicious_mints && analysis.ioc.suspicious_mints.length > 0) {
+                    html += '<strong>🪙 Suspicious Mints:</strong><br>';
+                    analysis.ioc.suspicious_mints.forEach(mint => {
+                        html += `<div class="ioc-item">${mint}</div>`;
+                    });
+                } else {
+                    html += '<strong>🪙 Suspicious Mints:</strong> None detected<br>';
+                }
+                
+                if (analysis.ioc.related_programs && analysis.ioc.related_programs.length > 0) {
+                    html += '<strong>🔧 Related Programs:</strong><br>';
+                    analysis.ioc.related_programs.forEach(program => {
+                        html += `<div class="ioc-item">${program}</div>`;
+                    });
+                }
+                
+                html += '</div>';
+            }
+            
+            // Additional Notes
+            if (analysis.additional_notes) {
+                html += '<div style="background-color: #e3f2fd; padding: 15px; border-radius: 5px; margin-top: 15px;">';
+                html += '<h4>📝 Additional Notes</h4>';
+                html += `<p>${analysis.additional_notes}</p>`;
+                html += '</div>';
+            }
+            
+            html += '</div>';
+            return html;
+        }
+
+        function parseAnalysisResult(rawResult) {
+            try {
+                // Handle case where result is wrapped in markdown code block
+                if (typeof rawResult === 'string') {
+                    // Remove markdown formatting if present
+                    let cleanResult = rawResult;
+                    if (rawResult.startsWith('```json\n')) {
+                        cleanResult = rawResult.replace(/^```json\n/, '').replace(/\n```$/, '');
+                    } else if (rawResult.startsWith('```\n')) {
+                        cleanResult = rawResult.replace(/^```\n/, '').replace(/\n```$/, '');
+                    }
+                    
+                    // Try to parse as JSON
+                    return JSON.parse(cleanResult);
+                } else {
+                    return rawResult;
+                }
+            } catch (e) {
+                console.error('Failed to parse analysis result:', e);
+                console.log('Raw result:', rawResult);
+                return null;
+            }
+        }
+
+        function formatAnalysisResult(data) {
+            if (!data.analysis_result && !data.detailed_data) return '';
+            
+            let html = '<div class="result-container">';
+            
+            // Parse and render threat analysis
+            let threatAnalysis = null;
+            if (data.analysis_result) {
+                threatAnalysis = parseAnalysisResult(data.analysis_result);
+                
+                if (threatAnalysis && threatAnalysis.threat_analysis) {
+                    html += formatThreatAnalysis(threatAnalysis);
+                } else if (data.analysis_result) {
+                    // Fallback to raw display if parsing fails
+                    html += '<div class="analysis-section">';
+                    html += '<h3>🤖 AI Analysis Result</h3>';
+                    html += '<div class="json-viewer">';
+                    if (typeof data.analysis_result === 'string') {
+                        // Display as formatted text
+                        html += data.analysis_result.replace(/\n/g, '<br>');
+                    } else {
+                        html += JSON.stringify(data.analysis_result, null, 2);
+                    }
+                    html += '</div></div>';
+                }
+            }
+            
+            // Detailed Data
+            if (data.detailed_data) {
+                const details = data.detailed_data;
+                
+                // Wallet Info
+                if (details.wallet_info) {
+                    html += '<div class="analysis-section">';
+                    html += '<h3>💼 Wallet Information</h3>';
+                    html += '<div class="data-grid">';
+                    html += `<div class="data-card"><h4>Address</h4><div class="data-value">${details.wallet_info.address || 'N/A'}</div></div>`;
+                    html += `<div class="data-card"><h4>Address Name</h4><div class="data-value">${details.wallet_info.address_name || 'Unknown'}</div></div>`;
+                    html += `<div class="data-card"><h4>Risk Score</h4><div class="data-value">${JSON.stringify(details.wallet_info.risk_score) || 'N/A'}</div></div>`;
+                    html += '</div></div>';
+                }
+                
+                // Transaction Summary
+                if (details.transaction_summary) {
+                    html += '<div class="analysis-section">';
+                    html += '<h3>📊 Transaction Summary</h3>';
+                    html += '<div class="data-grid">';
+                    html += `<div class="data-card"><h4>Total Transactions</h4><div class="data-value">${details.transaction_summary.total_transactions || 0}</div></div>`;
+                    html += `<div class="data-card"><h4>Recent Signatures</h4><div class="data-value">${details.transaction_summary.recent_signatures || 0}</div></div>`;
+                    html += `<div class="data-card"><h4>Balance Changes</h4><div class="data-value">${Array.isArray(details.transaction_summary.balance_changes) ? details.transaction_summary.balance_changes.length : 0}</div></div>`;
+                    html += '</div></div>';
+                }
+                
+                // Token Analysis
+                if (details.token_analysis) {
+                    html += '<div class="analysis-section">';
+                    html += '<h3>🪙 Token & NFT Analysis</h3>';
+                    html += '<div class="data-grid">';
+                    html += `<div class="data-card"><h4>Tokens Found</h4><div class="data-value">${details.token_analysis.tokens_found || 0}</div></div>`;
+                    html += `<div class="data-card"><h4>NFTs Found</h4><div class="data-value">${details.token_analysis.nfts_found || 0}</div></div>`;
+                    html += '</div>';
+                    
+                    // NFT Display
+                    if (details.token_analysis.nft_metadata && details.token_analysis.nft_metadata.length > 0) {
+                        html += '<h4>🖼️ Recent NFTs</h4>';
+                        html += '<div class="nft-grid">';
+                        details.token_analysis.nft_metadata.forEach(nft => {
+                            html += '<div class="nft-card">';
+                            if (nft.image) {
+                                html += `<img src="${nft.image}" alt="${nft.name || 'NFT'}" class="nft-image" onerror="this.style.display='none'">`;
+                            }
+                            html += `<h5>${nft.name || 'Unknown NFT'}</h5>`;
+                            html += `<small>${nft.symbol || ''}</small>`;
+                            html += '</div>';
+                        });
+                        html += '</div>';
+                    }
+                    
+                    // Token Metadata
+                    if (details.token_analysis.token_metadata && details.token_analysis.token_metadata.length > 0) {
+                        html += '<h4>📝 Token Metadata Sample</h4>';
+                        html += '<div class="json-viewer">' + JSON.stringify(details.token_analysis.token_metadata, null, 2) + '</div>';
+                    }
+                    
+                    html += '</div>';
+                }
+            }
+            
+            html += '</div>';
+            return html;
+        }
+
+        function startAnalysis() {
+            const address = document.getElementById('addressInput').value;
+            if (!address) {
+                alert('Please enter a Solana address');
+                return;
+            }
+
+            // Reset UI
+            document.getElementById('logs').innerHTML = '';
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('progressFill').style.width = '0%';
+            document.getElementById('status').innerText = 'Starting analysis...';
+            document.getElementById('analyzeBtn').disabled = true;
+
+            // Start EventSource
+            const eventSource = new EventSource(`http://localhost:8000/analyze/${address}`);
+            
+            eventSource.onmessage = function(event) {
+                if (event.data === '[DONE]') {
+                    eventSource.close();
+                    document.getElementById('analyzeBtn').disabled = false;
+                    document.getElementById('status').innerText = 'Analysis completed successfully!';
+                    return;
+                }
+                
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    // Update progress
+                    document.getElementById('progressFill').style.width = data.progress + '%';
+                    document.getElementById('status').innerText = data.status;
+                    
+                    // Add log with additional data info
+                    const logDiv = document.createElement('div');
+                    logDiv.className = 'log';
+                    let logContent = `Step ${data.step}: ${data.status} (${data.progress}%)`;
+                    
+                    if (data.data) {
+                        const dataInfo = Object.entries(data.data).map(([key, value]) => `${key}: ${value}`).join(', ');
+                        logContent += ` - ${dataInfo}`;
+                    }
+                    
+                    logDiv.innerHTML = logContent;
+                    document.getElementById('logs').appendChild(logDiv);
+                    
+                    // Show final result with proper formatting
+                    if (data.analysis_result || data.detailed_data) {
+                        document.getElementById('result').innerHTML = formatAnalysisResult(data);
+                    }
+                    
+                    // Auto scroll to bottom
+                    logDiv.scrollIntoView({ behavior: 'smooth' });
+                    
+                } catch (e) {
+                    console.error('Error parsing data:', e);
+                }
+            };
+            
+            eventSource.onerror = function(event) {
+                console.error('EventSource error:', event);
+                eventSource.close();
+                document.getElementById('analyzeBtn').disabled = false;
+                document.getElementById('status').innerText = 'Error occurred during analysis';
+            };
+        }
+    </script>
+</body>
+</html>
