@@ -247,7 +247,7 @@
                     html += '<h3>💼 Wallet Information</h3>';
                     html += '<div class="data-grid">';
                     html += `<div class="data-card"><h4>Address</h4><div class="data-value">${details.wallet_info.address || 'N/A'}</div></div>`;
-                    html += `<div class="data-card"><h4>Address Name</h4><div class="data-value">${details.wallet_info.address_name || 'Unknown'}</div></div>`;
+                    html += `<div class="data-card"><h4>Address Name</h4><div class="data-value">${details.wallet_info.owner || 'Unknown'}</div></div>`;
                     html += `<div class="data-card"><h4>Risk Score</h4><div class="data-value">${JSON.stringify(details.wallet_info.risk_score) || 'N/A'}</div></div>`;
                     html += '</div></div>';
                 }

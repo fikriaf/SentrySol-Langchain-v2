@@ -11,7 +11,7 @@ from modules.helius_api import (
     fetch_token_metadata,
     fetch_nft_metadata,
     fetch_balance_changes,
-    resolve_address_name,
+    resolve_owner,
     fetch_webhook_events,
     get_signatures_for_address,
 )
@@ -87,7 +87,7 @@ async def stream_analysis(target_address: str):
     await asyncio.sleep(0.1)
 
     wallet_score = fetch_wallet_score(target_address)
-    yield f"data: {json.dumps({'step': 4, 'status': 'Wallet score calculated', 'progress': 75, 'data': {'wallet_score': wallet_score}})}\n\n"
+    yield f"data: {json.dumps({'step': 4, 'status': 'Wallet score calculated', 'progress': 75})}\n\n"
 
     # Step 5: Additional data
     yield f"data: {json.dumps({'step': 5, 'status': 'Gathering additional data...', 'progress': 80})}\n\n"
@@ -99,10 +99,10 @@ async def stream_analysis(target_address: str):
         else {}
     )
     balance_changes = fetch_balance_changes(target_address)
-    address_name = resolve_address_name(target_address)
+    owner = resolve_owner(target_address)
     webhook_events = fetch_webhook_events([target_address], limit=5)
 
-    yield f"data: {json.dumps({'step': 5, 'status': 'Additional data gathered', 'progress': 85, 'data': {'address_name': address_name, 'balance_changes_count': len(balance_changes) if balance_changes else 0}})}\n\n"
+    yield f"data: {json.dumps({'step': 5, 'status': 'Additional data gathered', 'progress': 85, 'data': {'balance_changes_count': len(balance_changes) if balance_changes else 0}})}\n\n"
 
     # Step 6: Aggregate context
     yield f"data: {json.dumps({'step': 6, 'status': 'Aggregating context for analysis...', 'progress': 90})}\n\n"
@@ -154,13 +154,13 @@ async def stream_analysis(target_address: str):
         "detailed_data": {
             "wallet_info": {
                 "address": target_address,
-                "address_name": address_name,
+                "owner": owner["result"]["value"]["owner"] if owner["result"]["value"] else None,
                 "risk_score": wallet_score,
             },
             "transaction_summary": {
                 "total_transactions": len(address_history.get("result", [])),
                 "recent_signatures": len(signatures.get("result", [])),
-                "balance_changes": balance_changes,
+                "balance_changes": balance_changes["result"]["value"],
             },
             "token_analysis": {
                 "tokens_found": len(token_meta),
@@ -228,6 +228,178 @@ async def analyze_address_sync(address: str):
         "wallet_score": wallet_score,
         "transaction_count": len(address_history.get("result", [])),
     }
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint dengan status sistem"""
+    return {
+        "status": "healthy",
+        "version": "1.0.0",
+        "apis_configured": {
+            "blockchain_api": bool(HELIUS_API_KEY),
+            "risk_analysis_api": bool(METASLEUTH_API_KEY),
+            "ai_model": bool(MISTRAL_API_KEY),
+        },
+        "model": LLM_MODEL,
+    }
+
+
+@app.get("/address/{address}/transactions")
+async def get_address_transactions(address: str, limit: int = 20):
+    """Get transaction history for address"""
+    if len(address) < 32 or len(address) > 44:
+        return {"error": "Invalid Solana address format"}
+
+    result = fetch_address_history(address, limit=limit, enriched=True)
+    return result
+
+
+@app.get("/address/{address}/signatures")
+async def get_address_signatures(address: str, limit: int = 10):
+    """Get signatures for address"""
+    if len(address) < 32 or len(address) > 44:
+        return {"error": "Invalid Solana address format"}
+
+    result = get_signatures_for_address(address, limit=limit)
+    return result
+
+
+@app.get("/address/{address}/balance-changes")
+async def get_balance_changes(address: str):
+    """Get balance changes for address"""
+    if len(address) < 32 or len(address) > 44:
+        return {"error": "Invalid Solana address format"}
+
+    result = fetch_balance_changes(address)
+    return {"address": address, "balance_changes": result}
+
+
+@app.get("/address/{address}/risk-score")
+async def get_wallet_risk_score(address: str):
+    """Get wallet risk score from risk analysis service"""
+    if len(address) < 32 or len(address) > 44:
+        return {"error": "Invalid Solana address format"}
+
+    score = fetch_wallet_score(address)
+    return {"address": address, "risk_score": score}
+
+
+@app.get("/address/{address}/resolve-name")
+async def resolve_wallet_name(address: str):
+    """Resolve address to domain name"""
+    if len(address) < 32 or len(address) > 44:
+        return {"error": "Invalid Solana address format"}
+
+    name = resolve_owner(address)
+    return {"address": address, "name": name}
+
+
+@app.get("/transaction/{signature}")
+async def get_transaction_details(signature: str):
+    """Get detailed transaction information"""
+    result = fetch_transaction(signature)
+    return result
+
+
+@app.get("/token/{mint}/metadata")
+async def get_token_metadata(mint: str):
+    """Get token metadata"""
+    result = fetch_token_metadata(mint)
+    return result
+
+
+@app.get("/nft/{mint}/metadata")
+async def get_nft_metadata(mint: str):
+    """Get NFT metadata"""
+    result = fetch_nft_metadata(mint)
+    return result
+
+
+@app.get("/webhook/events")
+async def get_webhook_events(addresses: str, limit: int = 5):
+    """Get webhook events for addresses (comma-separated)"""
+    address_list = [addr.strip() for addr in addresses.split(",")]
+    result = fetch_webhook_events(address_list, limit=limit)
+    return result
+
+
+@app.get("/address/{address}/raw-data")
+async def get_raw_address_data(address: str):
+    """Get all raw data for address without AI analysis"""
+    if len(address) < 32 or len(address) > 44:
+        return {"error": "Invalid Solana address format"}
+
+    # Fetch all data
+    address_history = fetch_address_history(address, limit=20, enriched=True)
+    signatures = get_signatures_for_address(address, limit=10)
+    wallet_score = fetch_wallet_score(address)
+    balance_changes = fetch_balance_changes(address)
+    owner = resolve_owner(address)
+
+    # Get token/NFT data
+    token_meta = []
+    nft_meta = []
+
+    if address_history.get("result") and isinstance(address_history["result"], list):
+        for tx in address_history["result"][:5]:  # Limit to first 5 transactions
+            if isinstance(tx, dict) and tx.get("tokenTransfers"):
+                for token in tx.get("tokenTransfers", []):
+                    mint = token.get("mint")
+                    if mint:
+                        token_metadata = fetch_token_metadata(mint)
+                        token_meta.append(token_metadata)
+
+                        if token_metadata and token_metadata.get("decimals") == 0:
+                            nft_metadata = fetch_nft_metadata(mint)
+                            if nft_metadata:
+                                nft_meta.append(nft_metadata)
+
+    return {
+        "address": address,
+        "owner": owner,
+        "risk_score": wallet_score,
+        "transactions": address_history,
+        "signatures": signatures,
+        "balance_changes": balance_changes,
+        "tokens": token_meta,
+        "nfts": nft_meta,
+        "summary": {
+            "transaction_count": len(address_history.get("result", [])),
+            "signature_count": len(signatures.get("result", [])),
+            "token_count": len(token_meta),
+            "nft_count": len(nft_meta),
+        },
+    }
+
+
+@app.post("/analyze/batch")
+async def analyze_batch_addresses(addresses: list[str], limit: int = 5):
+    """Analyze multiple addresses (max 5 for performance)"""
+    if len(addresses) > limit:
+        return {"error": f"Maximum {limit} addresses allowed per batch"}
+
+    results = {}
+
+    for address in addresses:
+        if len(address) < 32 or len(address) > 44:
+            results[address] = {"error": "Invalid address format"}
+            continue
+
+        try:
+            # Basic analysis for each address
+            wallet_score = fetch_wallet_score(address)
+            address_history = fetch_address_history(address, limit=5, enriched=True)
+
+            results[address] = {
+                "risk_score": wallet_score,
+                "transaction_count": len(address_history.get("result", [])),
+                "status": "success",
+            }
+        except Exception as e:
+            results[address] = {"error": str(e), "status": "failed"}
+
+    return {"batch_results": results}
 
 
 if __name__ == "__main__":

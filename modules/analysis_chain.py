@@ -14,7 +14,7 @@ prompt_template = PromptTemplate(
     input_variables=["context"],
     template="""You are a blockchain threat intelligence analyst specializing in detecting malicious wallet activities.
 
-Analyze the following combined JSON data from Helius & Metasleuth APIs:
+Analyze the following combined JSON data from SentrySol Security & SentrySol Blockchain Analyzer APIs:
 
 {context}
 
@@ -28,7 +28,7 @@ TASKS:
    - recommended_actions
 3. Provide overall_risk_level ( **minimal, low, medium, high, critical** ), risk_score ( **scale 100** ), risk_factors, ioc, and additional_notes.
 
-Respond in valid JSON only.
+Respond in valid JSON only. Do not mention "Metasleuth" and "Helius" in your response.
 
 FORMAT:
 {{
@@ -37,7 +37,7 @@ FORMAT:
       "target_address": "...",
       "chain": "Solana",
       "analysis_timestamp": "{timestamp}",
-      "data_sources": ["SentrySol Security AI", "SentrySol Blockchain Analyzer", "SentrySol ML Model"]
+      "data_sources": ["SentrySol Security", "SentrySol Blockchain Analyzer", "SentrySol ML Model"]
     }},
     "potential_threats": [...],
     "overall_risk_level": "...",

@@ -55,17 +55,6 @@
             margin-bottom: 15px;
         }
 
-        .logo-icon {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            width: 60px;
-            height: 60px;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);
-        }
-
         .logo-icon i {
             font-size: 28px;
             color: white;
@@ -85,6 +74,67 @@
             color: var(--gray);
             max-width: 700px;
             margin: 0 auto;
+        }
+
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .social-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 25px;
+            color: var(--light);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .social-btn:hover {
+            background: rgba(37, 99, 235, 0.2);
+            border-color: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        }
+
+        .social-btn i {
+            font-size: 1.1rem;
+        }
+
+        .social-btn span {
+            font-weight: 600;
+        }
+
+        /* Social button specific colors */
+        .social-btn:hover:nth-child(1) {
+            background: rgba(29, 161, 242, 0.2);
+            border-color: #1da1f2;
+        }
+
+        .social-btn:hover:nth-child(2) {
+            background: rgba(36, 41, 46, 0.2);
+            border-color: #24292e;
+        }
+
+        .social-btn:hover:nth-child(3) {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: #10b981;
+        }
+
+        .social-btn:hover:nth-child(4) {
+            background: rgba(255, 0, 0, 0.2);
+            border-color: #ff0000;
         }
 
         .input-section {
@@ -440,6 +490,8 @@
         .evidence-item, .action-item {
             padding: 8px 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         .evidence-item:last-child, .action-item:last-child {
@@ -464,6 +516,8 @@
             background: rgba(15, 23, 42, 0.6);
             border-radius: 8px;
             padding: 15px;
+            max-height: 15rem;
+            overflow: auto;
         }
 
         .ioc-title {
@@ -561,6 +615,23 @@
             h1 {
                 font-size: 2.2rem;
             }
+
+            .social-links {
+                gap: 10px;
+            }
+
+            .social-btn {
+                padding: 8px 14px;
+                font-size: 0.8rem;
+            }
+
+            .social-btn span {
+                display: none;
+            }
+
+            .social-btn i {
+                font-size: 1.2rem;
+            }
         }
     </style>
 </head>
@@ -569,12 +640,31 @@
         <header>
             <div class="logo">
                 <div class="logo-icon">
-                    <i class="fas fa-shield-alt"></i>
+                    <img src="Logo_white gradient (2) 1.png" alt="SentrySol Logo" class="logo-image" width="80" height="80">
                 </div>
-                <h1>SentrySol-Core</h1>
+                <h1>SentrySol</h1>
             </div>
-            <p class="subtitle">Advanced Solana blockchain threat detection and analysis platform</p> </header>
-
+            <p class="subtitle">AI behavioral security for Web3</p>
+            <!-- Social Links Section -->
+            <div class="social-links">
+                <a href="https://twitter.com/sentrysol" target="_blank" class="social-btn" title="Follow us on X (Twitter)">
+                    <i class="fab fa-twitter"></i>
+                    <span>X</span>
+                </a>
+                <a href="https://github.com/sentrysol/core" target="_blank" class="social-btn" title="View on GitHub">
+                    <i class="fab fa-github"></i>
+                    <span>GitHub</span>
+                </a>
+                <a href="https://docs.sentrysol.com" target="_blank" class="social-btn" title="Read Documentation">
+                    <i class="fas fa-book"></i>
+                    <span>Documentation</span>
+                </a>
+                <a href="https://youtube.com/@sentrysol" target="_blank" class="social-btn" title="Watch Tutorials">
+                    <i class="fab fa-youtube"></i>
+                    <span>YouTube</span>
+                </a>
+            </div>
+        </header>
         <section class="input-section">
             <div class="input-group">
                 <input type="text" id="addressInput" placeholder="Enter Solana wallet address (e.g., 2YcwVbKx9L25Jpaj2vfWSXD5UKugZumWjzEe6suBUJi2)">
@@ -619,7 +709,7 @@
         </section>
 
         <footer>
-            <p>SentrySol-Core v1.0 | Advanced Blockchain Threat Intelligence Platform</p> </footer>
+            <p>SentrySol v1.0 | AI behavioral security for Web3</p> </footer>
     </div>
 
     <script>
@@ -786,14 +876,15 @@
             // Detailed Data
             if (data.detailed_data) {
                 const details = data.detailed_data;
+                const risk_scored = parseAnalysisResult(data.analysis_result).threat_analysis.risk_score;
                 
                 // Wallet Info
                 if (details.wallet_info) {
                     html += '<div class="section-title"><i class="fas fa-wallet"></i><span>Wallet Information</span></div>';
                     html += '<div class="analysis-grid">';
                     html += `<div class="analysis-card"><div class="card-header"><i class="fas fa-fingerprint"></i><div class="card-title">Address</div></div><div class="card-value" style="font-size: 0.8rem;">${details.wallet_info.address ? details.wallet_info.address.substring(0, 8) + '...' + details.wallet_info.address.substring(details.wallet_info.address.length - 8) : 'N/A'}</div></div>`;
-                    html += `<div class="analysis-card"><div class="card-header"><i class="fas fa-tag"></i><div class="card-title">Address Name</div></div><div class="card-value">${details.wallet_info.address_name || 'Unknown'}</div></div>`;
-                    html += `<div class="analysis-card"><div class="card-header"><i class="fas fa-shield-alt"></i><div class="card-title">Risk Score</div></div><div class="card-value">${details.wallet_info.risk_score || 'N/A'}</div></div>`;
+                    html += `<div class="analysis-card"><div class="card-header"><i class="fas fa-tag"></i><div class="card-title">Address Name</div></div><div class="card-value">${details.wallet_info.owner || 'Unknown'}</div></div>`;
+                    html += `<div class="analysis-card"><div class="card-header"><i class="fas fa-shield-alt"></i><div class="card-title">Risk Score</div></div><div class="card-value">${risk_scored || 'None'}<span style="font-size: 0.8rem;">/100</span></div></div>`;
                     html += '</div>';
                 }
                 
@@ -803,7 +894,7 @@
                     html += '<div class="analysis-grid">';
                     html += `<div class="analysis-card"><div class="card-header"><i class="fas fa-list"></i><div class="card-title">Total Transactions</div></div><div class="card-value">${details.transaction_summary.total_transactions || 0}</div></div>`;
                     html += `<div class="analysis-card"><div class="card-header"><i class="fas fa-signature"></i><div class="card-title">Recent Signatures</div></div><div class="card-value">${details.transaction_summary.recent_signatures || 0}</div></div>`;
-                    html += `<div class="analysis-card"><div class="card-header"><i class="fas fa-balance-scale"></i><div class="card-title">Balance Changes</div></div><div class="card-value">${Array.isArray(details.transaction_summary.balance_changes) ? details.transaction_summary.balance_changes.length : 0}</div></div>`;
+                    html += `<div class="analysis-card"><div class="card-header"><i class="fas fa-balance-scale"></i><div class="card-title">Balance Changes</div></div><div class="card-value">${details.transaction_summary.balance_changes || 0}</div></div>`;
                     html += '</div>';
                 }
                 

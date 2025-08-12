@@ -6,7 +6,7 @@ from modules.helius_api import (
     fetch_token_metadata,
     fetch_nft_metadata,
     fetch_balance_changes,
-    resolve_address_name,
+    resolve_owner,
     fetch_webhook_events,
     get_signatures_for_address,
 )
@@ -54,7 +54,7 @@ def main():
     tx_details = fetch_transaction(signatures["result"][0]["signature"])
     nft_meta = fetch_nft_metadata("ExampleMintAddressHere")
     balance_changes = fetch_balance_changes(target_address)
-    address_name = resolve_address_name(target_address)
+    owner = resolve_owner(target_address)
     webhook_events = fetch_webhook_events([target_address], limit=10)
 
     wallet_score = fetch_wallet_score(target_address)
@@ -79,11 +79,12 @@ def main():
     # Print contoh hasil fungsi baru
     print("\nNFT Metadata:", nft_meta)
     print("\nBalance Changes:", balance_changes)
-    print("\nAddress Name:", address_name)
+    print("\nAddress Name:", owner)
     print("\nWebhook Events:", webhook_events)
     print("\nSignatures for address:", signatures)
 
     print("\nWallet Score:", wallet_score)
+
 
 if __name__ == "__main__":
     main()
