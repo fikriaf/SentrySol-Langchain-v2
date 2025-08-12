@@ -11,6 +11,16 @@ On Windows (PowerShell):
 
 --------------------------
 
+Create .env :
+
+MISTRAL_API_KEY=
+MISTRAL_MODEL=ft:mistral-medium-latest:b319469f:20250807:b80c0dce
+HELIUS_API_KEY=
+CHAINABUSE_API_KEY=
+METASLEUTH_API_KEY=
+
+--------------------------
+
 pip install -r requirements.txt
 
 --------------------------
