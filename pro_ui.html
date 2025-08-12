@@ -400,6 +400,9 @@
             font-weight: 700;
             color: white;
             margin-bottom: 5px;
+            wwhite-space: nowrap;  /* jangan pindah baris */
+            overflow: hidden;     /* sembunyikan teks yang keluar */
+            text-overflow: ellipsis;
         }
 
         .card-description {
@@ -472,6 +475,8 @@
         .threat-reason {
             margin-bottom: 15px;
             line-height: 1.5;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         .evidence-list, .actions-list {
