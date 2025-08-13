@@ -766,6 +766,7 @@ async def chat_sentrysol_stream(request: ChatStreamRequest):
                     "timestamp": json.dumps(None, default=str),
                 }
                 yield f"data: {json.dumps(chunk_data)}\n\n"
+                await asyncio.sleep(0.01)
 
             yield f"data: {json.dumps({'type': 'done', 'message': 'Stream completed'})}\n\n"
             yield f"data: [DONE]\n\n"
@@ -782,6 +783,8 @@ async def chat_sentrysol_stream(request: ChatStreamRequest):
             "Connection": "keep-alive",
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Headers": "*",
+            "X-Accel-Buffering": "no",  # Disable Nginx buffering
+            "Content-Encoding": "identity", 
         },
     )
 
