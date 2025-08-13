@@ -121,7 +121,7 @@ async def stream_analysis(target_address: str):
     )
 
     # Step 7: Run LLM analysis
-    yield f"data: {json.dumps({'step': 7, 'status': 'Running AI analysis...', 'progress': 95})}\n\n"
+    yield f"data: {json.dumps({'step': 7, 'status': 'Running SentrySol-Core analysis...', 'progress': 95})}\n\n"
     await asyncio.sleep(0.1)
 
     result = run_analysis(context)
