@@ -659,8 +659,11 @@ async def analyze_batch_addresses(addresses: list[str], limit: int = 5):
 
 
 if __name__ == "__main__":
-    import os
     import uvicorn
-    
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    import os
+
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=int(os.environ["PORT"])  # Ambil langsung dari Railway
+    )
