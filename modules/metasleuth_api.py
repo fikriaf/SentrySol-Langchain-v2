@@ -16,7 +16,7 @@ def fetch_wallet_score(wallet_addr: str):
     # Deteksi chain berdasarkan format address
     if wallet_addr.startswith("0x") and len(wallet_addr) == 42:
         chain_id = 1
-    elif len(wallet_addr) == 44:
+    elif 32 <= len(wallet_addr) <= 44:
         chain_id = -3
     else:
         raise ValueError("Unsupported wallet address format")

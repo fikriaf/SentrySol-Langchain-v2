@@ -84,7 +84,8 @@ async def stream_analysis(target_address: str):
                                 nft_meta.append(nft_metadata)
 
     yield f"data: {json.dumps({'step': 3, 'status': 'Token and NFT metadata collected', 'progress': 55, 'data': {'tokens_analyzed': len(token_meta), 'nfts_found': len(nft_meta)}})}\n\n"
-
+    await asyncio.sleep(0.1)
+    
     # Step 4: Get wallet score
     yield f"data: {json.dumps({'step': 4, 'status': 'Calculating wallet risk score...', 'progress': 65})}\n\n"
     await asyncio.sleep(0.1)
@@ -494,10 +495,13 @@ async def analyze_address_stream(address: str):
         stream_analysis(address),
         media_type="text/event-stream",
         headers={
-            "Cache-Control": "no-cache",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
             "Connection": "keep-alive",
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Headers": "*",
+            "X-Accel-Buffering": "no",
+            "Content-Encoding": "identity",
+            "Transfer-Encoding": "chunked",
         },
     )
 
