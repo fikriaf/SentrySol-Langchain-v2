@@ -12,12 +12,42 @@ SentrySol-Langchain is a professional backend service for Solana blockchain anal
 
 ## Features
 
-- **Solana Address Analysis**: Analyze wallet history, risk score, token/NFT holdings, and more.
-- **Streaming & Synchronous Analysis**: Real-time streaming (SSE) or synchronous analysis endpoints.
-- **Transaction & Token Endpoints**: Fetch transaction details, token and NFT metadata, balance changes, and webhook events.
-- **AI Chat**: Interact with an AI assistant for security, compliance, and educational queries.
-- **Batch Analysis**: Analyze multiple addresses in one request.
-- **CORS Enabled**: Ready for integration with web frontends.
+
+---
+
+## System Flow Detail
+
+Berikut adalah alur proses sistem SentrySol-Langchain Backend secara garis besar:
+
+1. **Request Masuk ke API**
+   - Pengguna (frontend/webhook/curl) mengirim request ke endpoint FastAPI (misal: `/analyze/{address}` atau `/chat-sentrysol`).
+
+2. **Validasi & Routing**
+   - FastAPI melakukan validasi parameter (misal: format address, body request).
+   - Request diarahkan ke handler endpoint yang sesuai.
+
+3. **Pengambilan Data Blockchain & Eksternal**
+   - Endpoint memanggil modul-modul di folder `modules/` untuk mengambil data dari API eksternal:
+     - **Helius API**: Mendapatkan riwayat transaksi, signature, metadata token/NFT, perubahan saldo, dsb.
+     - **Metasleuth API**: Mendapatkan risk score wallet.
+     - **Mistral API**: Untuk AI chat/analisis (jika endpoint chat digunakan).
+
+4. **Preprocessing & Agregasi Data**
+   - Data mentah dari API eksternal diolah dan diagregasi oleh modul `preprocess.py` dan fungsi `aggregate_context`.
+   - Data yang sudah terstruktur disiapkan untuk analisis lebih lanjut.
+
+5. **Analisis & Penilaian**
+   - Untuk endpoint analisis, data dikirim ke modul `analysis_chain.py` dan/atau LLM (AI) untuk mendapatkan insight, penilaian risiko, dan ringkasan.
+   - Untuk endpoint chat, prompt dan context dikirim ke LLM untuk menghasilkan jawaban AI.
+
+6. **Penyusunan Response**
+   - Hasil analisis, data, dan insight disusun dalam format JSON sesuai endpoint.
+   - Untuk endpoint streaming, data dikirim bertahap menggunakan Server-Sent Events (SSE).
+
+7. **Response ke Client**
+   - Client menerima response JSON atau stream data secara real-time.
+
+---
 
 ---
 
