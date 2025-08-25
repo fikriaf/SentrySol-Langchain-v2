@@ -179,7 +179,7 @@ Always prioritize security analysis and provide concrete evidence for your asses
                 model="SentrySol-Premium",
                 openai_api_key=self.cerebras_api_key,
                 temperature=temperature,
-                max_tokens=max_tokens,
+                max_tokens=4000,
             )
             prompt = "\n".join(
                 [f"{msg['role'].capitalize()}: {msg['content']}" for msg in messages]
