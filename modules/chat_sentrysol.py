@@ -11,9 +11,9 @@ load_dotenv()
 class SentrySolChat:
     def __init__(self):
         self.api_key = os.getenv("MISTRAL_API_KEY")
-        self.model = os.getenv("LLM_MODEL", "SentrySol-Standart")
+        self.model = os.getenv("LLM_MODEL", "mistral-medium")
         self.cerebras_api_key = os.getenv("OPENAI_API_KEY")
-        self.cerebras_model = os.getenv("CEREBRAS_MODEL", "SentrySol-Premium")
+        self.cerebras_model = os.getenv("CEREBRAS_MODEL", "qwen-3-coder-480b")
         if not self.api_key:
             raise ValueError("MISTRAL_API_KEY not found in environment variables")
         self.client = Mistral(api_key=self.api_key)
@@ -83,7 +83,7 @@ Always prioritize security analysis and provide concrete evidence for your asses
                 model=self.cerebras_model,
                 openai_api_key=self.cerebras_api_key,
                 temperature=temperature,
-                max_tokens=max_tokens,
+                max_tokens=4000,
             )
             # Gunakan format prompt yang sama seperti Mistral
             prompt = "\n".join(
@@ -96,7 +96,7 @@ Always prioritize security analysis and provide concrete evidence for your asses
             return {
                 "success": True,
                 "response": assistant_message,
-                "model": self.cerebras_model,
+                "model": "SentrySol-Premium",
                 "usage": {},
                 "metadata": {
                     "temperature": temperature,
@@ -120,7 +120,7 @@ Always prioritize security analysis and provide concrete evidence for your asses
                 return {
                     "success": True,
                     "response": assistant_message,
-                    "model": getattr(response, "model", self.model),
+                    "model": "SentrySol-Standart",
                     "usage": {
                         "prompt_tokens": getattr(response.usage, "prompt_tokens", None),
                         "completion_tokens": getattr(
@@ -176,7 +176,7 @@ Always prioritize security analysis and provide concrete evidence for your asses
             if not self.cerebras_api_key:
                 raise Exception("CEREBRAS_API_KEY not set")
             cerebras_client = ChatCerebras(
-                model=self.cerebras_model,
+                model="SentrySol-Premium",
                 openai_api_key=self.cerebras_api_key,
                 temperature=temperature,
                 max_tokens=max_tokens,
@@ -190,10 +190,11 @@ Always prioritize security analysis and provide concrete evidence for your asses
                 if chunk.strip():
                     yield chunk
         except Exception as cerebras_exc:
+            print(cerebras_exc)
             # Fallback ke Mistral
             try:
                 stream_response = self.client.chat.stream(
-                    model=self.model,
+                    model="SentrySol-Standart",
                     messages=messages,
                     temperature=temperature,
                     max_tokens=max_tokens,
