@@ -4,3 +4,4 @@ python-dotenv
 requests
 langchain
 langchain-mistralai
+langchain-cerebras

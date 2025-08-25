@@ -513,26 +513,148 @@ async def analyze_address_sync(address: str):
     if len(address) < 32 or len(address) > 44:
         return {"error": "Invalid Solana address format"}
 
-    # Run semua analisis sekaligus
+    # Step 1: Fetch address history
     address_history = fetch_address_history(address, limit=20, enriched=True)
+
+    # Step 2: Get signatures
     signatures = get_signatures_for_address(address, limit=10)
+
+    # Step 3: Fetch token metadata
+    token_meta = []
+    nft_meta = []
+    if address_history.get("result") and isinstance(address_history["result"], list):
+        for tx in address_history["result"]:
+            if isinstance(tx, dict) and tx.get("tokenTransfers"):
+                for token in tx.get("tokenTransfers", []):
+                    mint = token.get("mint")
+                    if mint:
+                        token_metadata = fetch_token_metadata(mint)
+                        token_meta.append(token_metadata)
+                        if token_metadata and token_metadata.get("decimals") == 0:
+                            nft_metadata = fetch_nft_metadata(mint)
+                            if nft_metadata:
+                                nft_meta.append(nft_metadata)
+
+    # Step 4: Get wallet score
     wallet_score = fetch_wallet_score(address)
 
+    # Step 5: Additional data
+    tx_details = (
+        fetch_transaction(signatures["result"][0]["signature"])
+        if signatures.get("result")
+        else {}
+    )
+    balance_changes = fetch_balance_changes(address)
+    owner = resolve_owner(address)
+    webhook_events = fetch_webhook_events([address], limit=5)
+
+    # Step 6: Aggregate context
     context = aggregate_context(
-        helius_txs=address_history.get("result", []),
+        helius_txs=[tx_details]
+        + (
+            address_history.get("result", [])
+            if isinstance(address_history.get("result"), list)
+            else []
+        ),
         metasleuth_score=wallet_score,
         target_address=address,
-        extra_notes="Sync analysis",
+        extra_notes="Sync analysis with NFT data",
     )
 
+    # Step 7: Run LLM analysis
     result = run_analysis(context)
 
-    return {
-        "address": address,
-        "analysis_result": result,
-        "wallet_score": wallet_score,
-        "transaction_count": len(address_history.get("result", [])),
+    # Parse result jika berupa string JSON (adapted from stream version)
+    parsed_result = result
+    if isinstance(result, str):
+        try:
+            clean_result = result.strip()
+            if "```json" in clean_result:
+                start_marker = "```json"
+                end_marker = "```"
+                start_idx = clean_result.find(start_marker)
+                if start_idx != -1:
+                    start_idx = clean_result.find("\n", start_idx)
+                    if start_idx == -1:
+                        start_idx = clean_result.find(start_marker) + len(start_marker)
+                    else:
+                        start_idx += 1
+                    end_idx = clean_result.rfind(end_marker)
+                    if end_idx != -1 and end_idx > start_idx:
+                        clean_result = clean_result[start_idx:end_idx].strip()
+            elif clean_result.startswith("```") and clean_result.endswith("```"):
+                lines = clean_result.split("\n")
+                if len(lines) > 2:
+                    clean_result = "\n".join(lines[1:-1]).strip()
+            import re
+            clean_result = re.sub(
+                r"[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]", "", clean_result
+            )
+            if not clean_result.startswith("{"):
+                start_brace = clean_result.find("{")
+                if start_brace != -1:
+                    clean_result = clean_result[start_brace:]
+            def fix_json_structure(json_str):
+                lines = json_str.split("\n")
+                fixed_lines = []
+                for line in lines:
+                    if not line.strip():
+                        continue
+                    fixed_lines.append(line)
+                fixed_json = "\n".join(fixed_lines)
+                open_braces = fixed_json.count("{")
+                close_braces = fixed_json.count("}")
+                open_brackets = fixed_json.count("[")
+                close_brackets = fixed_json.count("]")
+                if open_braces > close_braces:
+                    fixed_json += "}" * (open_braces - close_braces)
+                if open_brackets > close_brackets:
+                    fixed_json += "]" * (open_brackets - close_brackets)
+                return fixed_json
+            clean_result = fix_json_structure(clean_result)
+            parsed_result = json.loads(clean_result)
+        except Exception:
+            parsed_result = result
+
+    def safe_get(obj, *keys, default=None):
+        try:
+            if obj is None:
+                return default
+            for key in keys:
+                obj = obj[key]
+            return obj
+        except (KeyError, TypeError, AttributeError):
+            return default
+
+    final_data = {
+        "step": 8,
+        "status": "Analysis complete",
+        "progress": 100,
+        "analysis_result": parsed_result,
+        "detailed_data": {
+            "wallet_info": {
+                "address": address,
+                "owner": safe_get(owner, "result", "value", "owner")
+                if safe_get(owner, "result", "value", "owner")
+                else address,
+                "risk_score": wallet_score,
+            },
+            "transaction_summary": {
+                "total_transactions": len(address_history.get("result", [])),
+                "recent_signatures": len(signatures.get("result", [])),
+                "balance_changes": safe_get(balance_changes, "result", "value"),
+            },
+            "token_analysis": {
+                "tokens_found": len(token_meta),
+                "token_metadata": token_meta[:5] if token_meta else [],
+                "nfts_found": len(nft_meta),
+                "nft_metadata": nft_meta[:3] if nft_meta else [],
+            },
+            "webhook_events": webhook_events if webhook_events else [],
+        },
     }
+
+    return final_data
 
 
 @app.get("/health")

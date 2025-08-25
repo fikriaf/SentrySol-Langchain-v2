@@ -1,129 +1,72 @@
 {
   "threat_analysis": {
     "metadata": {
-      "target_address": "2x49QuCuMaVMRyfWUsAYo383GD8D5RDRSCuxRREXXSGS",
+      "target_address": "FN4batGEQ9HWXhwFe2Mb3Scaiezvo3CPgPGsRtY6q9Xy",
       "chain": "Solana",
-      "analysis_timestamp": "2025-08-15 10:18:20",
-      "data_sources": ["SentrySol Security", "SentrySol Blockchain Analyzer", "SentrySol ML Model"]
+      "analysis_timestamp": "2025-08-25 17:33:50",
+      "data_sources": [
+        "SentrySol Security",
+        "SentrySol Blockchain Analyzer",
+        "SentrySol ML Model"
+      ]
     },
     "potential_threats": [
       {
-        "threat_type": "Transaction Obfuscation / Suspicious Activity",
-        "reason": "The first transaction in the list (`signature: 1`) returned an error indicating an unsupported transaction version (`code: -32015`). This is highly unusual for legitimate transactions and suggests either (1) an attempt to probe for client-side vulnerabilities, (2) a malformed transaction designed to evade analysis, or (3) a failed exploit attempt targeting outdated RPC endpoints. The absence of `blockTime`, `instructions`, or `accounts` further reinforces this suspicion, as it deviates from standard Solana transaction structures.",
+        "threat_type": "Dusting",
+        "reason": "Multiple transactions with very small SOL transfers occurring in a short time window. These micro-transfers are typically used to tag wallet addresses for tracking or to trigger specific on-chain behaviors.",
         "confidence": "High",
-        "supporting_evidence": {
-          "error_code": -32015,
-          "error_message": "Transaction version (0) is not supported by the requesting client. Please try the request again with the following configuration parameter: 'maxSupportedTransactionVersion': 0",
-          "missing_fields": ["blockTime", "instructions", "tokenTransfers", "accounts"],
-          "anomaly": "Non-standard transaction structure with RPC-level rejection"
-        },
+        "supporting_evidence": [
+          "Transaction signatures show consistent pattern of low-value SOL transfers.",
+          "All transactions occurred within a 50-minute timeframe.",
+          "No token transfers or complex instructions observed, suggesting basic fund movements."
+        ],
         "recommended_actions": [
-          "Flag the address for deeper behavioral analysis, focusing on RPC interaction patterns.",
-          "Check if the address is part of a larger campaign targeting vulnerable nodes or wallets with outdated transaction version support.",
-          "Monitor for similar malformed transactions originating from this address in other blockchains or layers.",
-          "Isolate the address in sandboxed environments to observe potential exploit payloads."
-        ]
-      },
-      {
-        "threat_type": "Empty Transaction Spoofing / Chain Pollution",
-        "reason": "The two 'successful' transactions (`signatures: 4tyWwYoTKFy7MzG7UrowHZVtosuJX5tYm1NfEpe8BMroLtS5zgY4MgfFLubJZ4hiyKQ5g5TRhffMKWG5Ws2qa1Z8` and `3mBziV4sTqYEaAg7SdvJbVZH7vSSUnpT9rJ3xKse9YZXkq3oKwQoqGvdFySVvUHK2PA59yfYX2fFsbuMSgMsA7kd`) are finalized but contain no meaningful data:
-        - No `instructions` (indicating no executable logic).
-        - No `tokenTransfers` or `accounts` (indicating no asset movement or interactions).
-        - No `memo` (common in legitimate transactions for context).
-        This pattern is consistent with:
-        1. **Chain pollution**: Cluttering the ledger to increase costs for validators or obfuscate other activities.
-        2. **Transaction spam**: Testing rate limits or probing network resilience.
-        3. **Sybil activity**: Creating artificial transaction history to manipulate reputation systems or airdrop eligibility.",
-        "confidence": "Medium",
-        "supporting_evidence": {
-          "empty_fields": ["instructions", "tokenTransfers", "accounts", "memo"],
-          "timing_proximity": "Transactions occurred within 38 seconds of each other (1746061623 and 1746061661)",
-          "finalized_status": "Both transactions are finalized despite lacking purpose",
-          "pattern": "Repeated empty transactions from the same address"
-        },
-        "recommended_actions": [
-          "Cross-reference with known spam/chain pollution campaigns on Solana.",
-          "Analyze the address's transaction history for sudden bursts of similar empty transactions.",
-          "Check if the address is linked to airdrop farming or Sybil attack clusters.",
-          "Monitor validators' logs for unusual load patterns correlated with this address."
-        ]
-      },
-      {
-        "threat_type": "Potential Dusting Attack (Preparatory Phase)",
-        "reason": "While no token transfers are visible in the provided data, the combination of:
-        - **Empty transactions** (which could be probing for active wallets).
-        - **Transaction version manipulation** (suggesting technical sophistication).
-        - **Lack of NFT/metadata** (despite the API note about 'NFT data') hints at a possible dusting attack in preparation. Dusting often starts with seemingly innocuous transactions to identify active targets before sending micro-amounts of tokens (dust) to track or phish wallets.",
-        "confidence": "Low",
-        "supporting_evidence": {
-          "context": "No direct evidence of dust, but behavioral patterns align with pre-dusting reconnaissance.",
-          "api_note": "Mention of 'NFT data' in notes suggests potential future asset-related attacks.",
-          "timing": "Transactions are recent (August 2025), indicating possible ongoing campaign."
-        },
-        "recommended_actions": [
-          "Monitor the address for outgoing micro-transactions to unrelated wallets.",
-          "Check if the address has received unsolicited tokens (dust) from other sources.",
-          "Educate potential targets (if this is a monitored wallet) about dusting risks.",
-          "Analyze the address's creation time and funding sources for links to known dusting clusters."
-        ]
-      },
-      {
-        "threat_type": "API Abuse / Rate-Limit Evasion",
-        "reason": "The `notes` field mentions 'API streaming analysis with NFT data,' but the `metasleuth` response indicates a **daily request limit exceeded (code: 400012)**. This suggests:
-        1. The address may be part of a bulk query campaign (e.g., scraping wallets for vulnerabilities).
-        2. The actor behind the address could be using automated tools to evade rate limits, possibly rotating APIs or IPs.
-        3. The lack of NFT data in the response (despite the note) may indicate failed enumeration attempts.",
-        "confidence": "Medium",
-        "supporting_evidence": {
-          "error_code": 400012,
-          "error_message": "Daily request limit exceeded. Please try again tomorrow.",
-          "inconsistency": "Notes mention NFT data, but no NFT-related fields are present in transactions.",
-          "timing": "API limit hit shortly after the empty transactions (suggesting correlated activity)."
-        },
-        "recommended_actions": [
-          "Correlate the address with other API abuse reports (e.g., Alchemy, QuickNode).",
-          "Check if the address is associated with known bulk-query tools (e.g., Dune Analytics scrapers).",
-          "Monitor for IP/geolocation patterns in API requests linked to this address.",
-          "Flag the address for potential inclusion in API abuse blacklists."
+          "Flag wallet for monitoring unusual activity.",
+          "Alert user to potential dusting attack.",
+          "Advise against interacting with unknown small-value transfers."
         ]
       }
     ],
     "overall_risk_level": "medium",
-    "risk_score": 68,
+    "risk_score": 62,
     "risk_factors": [
-      "High confidence in transaction obfuscation (malformed RPC request).",
-      "Medium confidence in chain pollution/spam (empty transactions).",
-      "Low confidence in dusting (preparatory behavior).",
-      "Medium confidence in API abuse (rate-limit evasion).",
-      "No direct evidence of fund theft, rug pulls, or laundering, but behavioral anomalies suggest reconnaissance or testing phases of an attack.",
-      "Recent activity (August 2025) increases relevance for proactive mitigation."
+      "High frequency of micro-transfers",
+      "Absence of token/NFT interaction despite noted API streaming with NFT data",
+      "Multiple transactions from different source addresses in short time window"
     ],
     "ioc": {
-      "addresses": ["2x49QuCuMaVMRyfWUsAYo383GD8D5RDRSCuxRREXXSGS"],
+      "addresses": [
+        "D6g4wcKXeBwZnMGRBGMvrbYV3rtjJfh5JpvWBKwW1cAD"
+      ],
       "transaction_signatures": [
-        "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"
+        "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"
       ],
       "suspicious_mints": [],
-      "related_programs": [],
-      "additional_ioc": {
-        "error_codes": [-32015, 400012],
-        "anomalous_patterns": [
-          "Empty finalized transactions",
-          "Transaction version 0 rejection",
-          "API rate-limit evasion"
-        ]
-      }
+      "related_programs": [
+        "11111111111111111111111111111111",
+        "ComputeBudget111111111111111111111111111111"
+      ]
     },
-    "additional_notes": [
-      "The address exhibits **reconnaissance-like behavior** rather than direct exploitation. This suggests it may be in the early stages of an attack campaign (e.g., probing for vulnerabilities or testing transaction structures).",
-      "The **absence of NFT/token activity** despite API notes is suspicious—this could indicate failed enumeration or deliberate omission to avoid detection.",
-      "Recommend **proactive monitoring** of this address for:
-        - Sudden token transfers (dusting or theft).
-        - Interactions with known malicious programs (e.g., fake token mints).
-        - Bursts of similar empty transactions (spam campaigns).",
-      "If this address is part of a **wallet cluster**, analyze related addresses for coordinated activity (e.g., Sybil attacks).",
-      "The **risk score (68/100)** reflects the **uncertainty of intent** (no direct theft) but **high anomaly density** (multiple suspicious patterns in a short timeframe)."
-    ]
+    "additional_notes": "The target wallet received numerous micro-transfers of SOL over a short period without engaging in any significant DeFi or NFT activity. This behavior aligns with dusting attacks. No malicious program interactions were detected in available transaction logs.",
+    "engine": "SentrySol-Premium SDK"
   }
 }
