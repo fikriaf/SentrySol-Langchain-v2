@@ -176,10 +176,10 @@ Always prioritize security analysis and provide concrete evidence for your asses
             if not self.cerebras_api_key:
                 raise Exception("CEREBRAS_API_KEY not set")
             cerebras_client = ChatCerebras(
-                model="SentrySol-Premium",
+                model=self.cerebras_model,
                 openai_api_key=self.cerebras_api_key,
                 temperature=temperature,
-                max_tokens=4000,
+                max_tokens=max_tokens,
             )
             prompt = "\n".join(
                 [f"{msg['role'].capitalize()}: {msg['content']}" for msg in messages]
@@ -194,7 +194,7 @@ Always prioritize security analysis and provide concrete evidence for your asses
             # Fallback ke Mistral
             try:
                 stream_response = self.client.chat.stream(
-                    model="SentrySol-Standart",
+                    model=self.model,
                     messages=messages,
                     temperature=temperature,
                     max_tokens=max_tokens,
