@@ -107,6 +107,7 @@ Always prioritize security analysis and provide concrete evidence for your asses
                 },
             }
         except Exception as cerebras_exc:
+            print(cerebras_exc)
             # Fallback ke Mistral
             try:
                 response = self.client.chat.complete(
